@@ -32,7 +32,26 @@ wss.on("connection", (socket) => {
 
 
         if (data.type === "register") {
-            const username = data.username?.trim();
+            const alreadyRegistered = [...clients.values()]
+                .includes(socket);
+
+            if (alreadyRegistered) {
+                socket.send(JSON.stringify({
+                    type: "error",
+                    message: "This connection is already registered"
+                }));
+                return;
+            }
+            if (typeof data.username !== "string" ||
+                !data.username.trim()) {
+                socket.send(JSON.stringify({
+                    type: "error",
+                    message: "A valid username is required"
+                }));
+                return;
+            }
+
+            const username = data.username.trim();
 
             if (typeof username !== "string" || !username) {
                 socket.send(JSON.stringify({

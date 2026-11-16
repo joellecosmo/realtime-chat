@@ -30,22 +30,58 @@ wss.on("connection", (socket) => {
             return;
         }
 
+
         if (data.type === "register") {
-            clients.set(data.username, socket);
-            console.log(`${data.username} registered`);
+            const username = data.username?.trim();
+
+            if (typeof username !== "string" || !username) {
+                socket.send(JSON.stringify({
+                    type: "error",
+                    message: "A valid username is required"
+                }));
+                return;
+            }
+
+            if (clients.has(username)) {
+                socket.send(JSON.stringify({
+                    type: "error",
+                    message: "Username is already taken"
+                }));
+                return;
+            }
+
+            clients.set(username, socket);
+
+            socket.send(JSON.stringify({
+                type: "registered",
+                username
+            }));
+
+            console.log(`${username} registered`);
             return;
         }
+
+
 
         if (data.type === "message") {
             const recipient = clients.get(data.to);
 
+            const sender = [...clients.entries()]
+                .find(([username, client]) => client === socket)?.[0];
+
+            if (!sender) {
+                console.log("Message rejected: unregistered sender");
+                return;
+            }
+
             if (recipient && recipient.readyState === WebSocket.OPEN) {
                 recipient.send(JSON.stringify({
-                    from: data.from,
+                    from: sender,
                     body: data.body
                 }));
             }
         }
+
     });
 
     socket.on("close", () => {

@@ -1,10 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Realtime Chat</title>
 </head>
+
 <body>
     <h1>Realtime Chat</h1>
 
@@ -43,17 +44,29 @@
                     type: "register",
                     username
                 }));
-
-                status.textContent = `Connected as ${username}`;
-                sendButton.disabled = false;
             };
+
 
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
+
+                if (data.type === "error") {
+                    status.textContent = data.message;
+                    sendButton.disabled = true;
+                    return;
+                }
+
+                if (data.type === "registered") {
+                    status.textContent = `Connected as ${data.username}`;
+                    sendButton.disabled = false;
+                    return;
+                }
+
                 const item = document.createElement("li");
                 item.textContent = `${data.from}: ${data.body}`;
                 document.getElementById("messages").appendChild(item);
             };
+
 
             socket.onclose = () => {
                 status.textContent = "Disconnected";
@@ -77,4 +90,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Realtime Chat</title>
+</head>
+<body>
+    <h1>Realtime Chat</h1>
+
+    <input id="username" placeholder="Your username">
+    <button id="connectButton">Connect</button>
+    <p id="status">Disconnected</p>
+
+    <hr>
+
+    <input id="recipient" placeholder="Recipient">
+    <input id="message" placeholder="Your message">
+    <button id="sendButton" disabled>Send</button>
+
+    <h3>Messages</h3>
+    <ul id="messages"></ul>
+
+    <script>
+        let socket;
+        let username;
+
+        const status = document.getElementById("status");
+        const sendButton = document.getElementById("sendButton");
+
+        document.getElementById("connectButton").addEventListener("click", () => {
+            username = document.getElementById("username").value.trim();
+
+            if (!username) {
+                alert("Enter a username");
+                return;
+            }
+
+            socket = new WebSocket(`ws://${window.location.host}`);
+
+            socket.onopen = () => {
+                socket.send(JSON.stringify({
+                    type: "register",
+                    username
+                }));
+
+                status.textContent = `Connected as ${username}`;
+                sendButton.disabled = false;
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const item = document.createElement("li");
+                item.textContent = `${data.from}: ${data.body}`;
+                document.getElementById("messages").appendChild(item);
+            };
+
+            socket.onclose = () => {
+                status.textContent = "Disconnected";
+                sendButton.disabled = true;
+            };
+        });
+
+        sendButton.addEventListener("click", () => {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            socket.send(JSON.stringify({
+                type: "message",
+                from: username,
+                to: document.getElementById("recipient").value.trim(),
+                body: document.getElementById("message").value.trim()
+            }));
+
+            document.getElementById("message").value = "";
+        });
+    </script>
+</body>
+</html>

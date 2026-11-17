@@ -42,8 +42,11 @@ wss.on("connection", (socket) => {
                 }));
                 return;
             }
-            if (typeof data.username !== "string" ||
-                !data.username.trim()) {
+
+            if (
+                typeof data.username !== "string" ||
+                !data.username.trim()
+            ) {
                 socket.send(JSON.stringify({
                     type: "error",
                     message: "A valid username is required"
@@ -52,14 +55,6 @@ wss.on("connection", (socket) => {
             }
 
             const username = data.username.trim();
-
-            if (typeof username !== "string" || !username) {
-                socket.send(JSON.stringify({
-                    type: "error",
-                    message: "A valid username is required"
-                }));
-                return;
-            }
 
             if (clients.has(username)) {
                 socket.send(JSON.stringify({
@@ -78,28 +73,44 @@ wss.on("connection", (socket) => {
 
             console.log(`${username} registered`);
             return;
-        }
+        };
 
 
 
         if (data.type === "message") {
-            const recipient = clients.get(data.to);
-
             const sender = [...clients.entries()]
                 .find(([username, client]) => client === socket)?.[0];
 
             if (!sender) {
-                console.log("Message rejected: unregistered sender");
+                socket.send(JSON.stringify({
+                    type: "error",
+                    message: "You must register before sending messages"
+                }));
                 return;
             }
 
-            if (recipient && recipient.readyState === WebSocket.OPEN) {
-                recipient.send(JSON.stringify({
-                    from: sender,
-                    body: data.body
+            const recipient = clients.get(data.to);
+
+            if (!recipient || recipient.readyState !== WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    type: "delivery_failed",
+                    message: `User ${data.to} is offline`
                 }));
+                return;
             }
+
+            recipient.send(JSON.stringify({
+                type: "message",
+                from: sender,
+                body: data.body
+            }));
+
+            socket.send(JSON.stringify({
+                type: "message_sent",
+                to: data.to
+            }));
         }
+
 
     });
 

@@ -59,6 +59,11 @@
             socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
 
+                if (data.type === "delivery_timeout") {
+                    status.textContent = `Delivery not confirmed for message ${data.messageId}`;
+                    return;
+                }
+
                 if (data.type === "delivery_failed") {
                     status.textContent = data.message;
                     return;
@@ -66,6 +71,12 @@
 
                 if (data.type === "message_sent") {
                     status.textContent = `Message sent to ${data.to}`;
+                    return;
+                }
+
+                // Delivery acknowledgment received
+                if (data.type === "delivered") {
+                    status.textContent = `Message delivered! ID: ${data.messageId}`;
                     return;
                 }
 
@@ -84,9 +95,19 @@
                     return;
                 }
 
-                const item = document.createElement("li");
-                item.textContent = `${data.from}: ${data.body}`;
-                document.getElementById("messages").appendChild(item);
+                if (data.type === "message") {
+                    const item = document.createElement("li");
+                    item.textContent = `${data.from}: ${data.body}`;
+                    document.getElementById("messages").appendChild(item);
+
+                    // Acknowledge receipt of the message
+                    socket.send(JSON.stringify({
+                        type: "ack",
+                        messageId: data.messageId
+                    }));
+
+                    return;
+                }
             };
 
             socket.onerror = () => {

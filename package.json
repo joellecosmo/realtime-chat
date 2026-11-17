@@ -10,6 +10,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "graphql-ws": "^5.16.2",
     "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "graphql": "^16.15.0"
   }
 }

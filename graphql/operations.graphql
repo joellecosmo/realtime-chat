@@ -1,0 +1,18 @@
+mutation SendMessage {
+    sendMessage(to: "Bob", body: "Hello Bob!") {
+        id
+        from
+        to
+        body
+        sentAt
+    }
+}
+
+subscription ReceiveMessages {
+    onMessage(to: "Bob") {
+        id
+        from
+        body
+        sentAt
+    }
+}
